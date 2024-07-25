@@ -3,12 +3,15 @@ import { ShoppingCartOutlined } from "@ant-design/icons";
 import { Button, Drawer } from "antd";
 import "./components.css";
 import Logo from "../assets/images/return.png";
-import useCartStore from "../store/useCartStore"; // Importa el store
+import useCartStore from "../store/useCartStore";
 
 const Nav = ({ isOpen, setIsOpen, isLoggedIn, setIsLoggedIn }) => {
   const navigate = useNavigate();
-  const cart = useCartStore((state) => state.cart);
-  const removeFromCart = useCartStore((state) => state.removeFromCart);
+  const { cart, removeFromCart, clearCart } = useCartStore((state) => ({
+    cart: state.cart,
+    removeFromCart: state.removeFromCart,
+    clearCart: state.clearCart,
+  }));
 
   const toggleDrawer = () => setIsOpen(!isOpen);
   const handleLogout = () => {
@@ -16,6 +19,12 @@ const Nav = ({ isOpen, setIsOpen, isLoggedIn, setIsLoggedIn }) => {
     setIsLoggedIn(false);
     navigate("/"); // Redirige a la página principal después de cerrar sesión
   };
+
+  const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
+  const totalPrice = cart.reduce(
+    (acc, item) => acc + item.precio * item.quantity,
+    0
+  );
 
   return (
     <div>
@@ -52,8 +61,7 @@ const Nav = ({ isOpen, setIsOpen, isLoggedIn, setIsLoggedIn }) => {
           <li className="nav-item">
             <Button onClick={toggleDrawer}>
               <ShoppingCartOutlined style={{ fontSize: "24px" }} />
-              <span>{cart.length}</span>{" "}
-              {/* Muestra la cantidad de productos */}
+              <span>{totalItems}</span>
             </Button>
           </li>
         </ul>
@@ -65,19 +73,31 @@ const Nav = ({ isOpen, setIsOpen, isLoggedIn, setIsLoggedIn }) => {
         onClose={toggleDrawer}
         open={isOpen}
       >
-        {/* Muestra los productos en el carrito */}
         {cart.length > 0 ? (
-          <ul>
-            {cart.map((item) => (
-              <li key={item.id}>
-                <h3>{item.nombre}</h3>
-                <p>${item.precio}</p>
-                <Button onClick={() => removeFromCart(item.id)}>
-                  Eliminar
-                </Button>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul>
+              {cart.map((item) => (
+                <li key={item.id}>
+                  <h3 className="color-carrito">{item.nombre}</h3>
+                  <img src={item.imagen} alt={item.nombre} width={50} />
+                  <p>
+                    ${item.precio} x {item.quantity}
+                  </p>
+                  <Button onClick={() => removeFromCart(item.id)}>
+                    Eliminar
+                  </Button>
+                </li>
+              ))}
+            </ul>
+            <div>
+              <p>Total Productos: {totalItems}</p>
+              <p>Precio Total: ${totalPrice.toFixed(2)}</p>
+              <Button type="primary" onClick={() => navigate("/checkout")}>
+                Concretar Pedido
+              </Button>
+              <Button onClick={() => clearCart()}>Vaciar Carrito</Button>
+            </div>
+          </>
         ) : (
           <p>El carrito está vacío.</p>
         )}
